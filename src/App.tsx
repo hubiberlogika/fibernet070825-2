@@ -6,6 +6,8 @@ import RouteManagement from './components/Routes/RouteManagement';
 import CoreManagement from './components/CoreManagement/CoreManagement';
 import AssetManagement from './components/Assets/AssetManagement';
 import TroubleTicketManagement from './components/TroubleTickets/TroubleTicketManagement';
+import MaintenanceList from './components/Maintenance/MaintenanceList';
+import ExportImportModal from './components/Common/ExportImportModal';
 import { 
   routes as initialRoutes, 
   maintenanceRecords, 
@@ -24,6 +26,8 @@ function App() {
   const [routes, setRoutes] = useState(initialRoutes);
   const [troubleTickets, setTroubleTickets] = useState(initialTroubleTickets);
   const [networkAssets, setNetworkAssets] = useState(initialNetworkAssets);
+  const [showMaintenanceExportModal, setShowMaintenanceExportModal] = useState(false);
+  const [showMaintenanceImportModal, setShowMaintenanceImportModal] = useState(false);
 
   const activeAlerts = alerts.filter(alert => !alert.acknowledged).length;
   const totalTroubleTickets = routes.reduce((sum, route) => sum + route.troubleTickets, 0);
@@ -150,11 +154,34 @@ function App() {
         );
       case 'history':
         return (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Activity History</h2>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <p className="text-gray-500 text-center">Activity history will be displayed here</p>
-            </div>
+          <div>
+            <MaintenanceList 
+              maintenanceRecords={maintenanceData}
+              routes={routes.map(r => ({ id: r.id, name: r.name }))}
+              onExport={() => setShowMaintenanceExportModal(true)}
+              onImport={() => setShowMaintenanceImportModal(true)}
+            />
+            
+            {/* Maintenance Export Modal */}
+            <ExportImportModal
+              isOpen={showMaintenanceExportModal}
+              onClose={() => setShowMaintenanceExportModal(false)}
+              mode="export"
+              dataType="maintenance"
+              data={{ maintenance: maintenanceData, routes }}
+            />
+
+            {/* Maintenance Import Modal */}
+            <ExportImportModal
+              isOpen={showMaintenanceImportModal}
+              onClose={() => setShowMaintenanceImportModal(false)}
+              mode="import"
+              dataType="maintenance"
+              data={{ maintenance: maintenanceData, routes }}
+              onImportComplete={(importedMaintenance) => {
+                console.log('Imported maintenance:', importedMaintenance);
+              }}
+            />
           </div>
         );
       case 'alerts':

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import RouteConfigurationDiagram from './RouteConfigurationDiagram';
 import TrafficTable from './TrafficTable';
+import ExportImportModal from '../Common/ExportImportModal';
 
 interface CoreManagementProps {
   routes: Route[];
@@ -194,6 +195,8 @@ export default function CoreManagement({ routes, onRouteUpdate }: CoreManagement
   const [trafficData, setTrafficData] = useState<TrafficData[]>(mockTrafficData);
   const [isEditingDiagram, setIsEditingDiagram] = useState(false);
   const [activeTab, setActiveTab] = useState<'diagram' | 'traffic' | 'analysis'>('diagram');
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const handleRouteSelect = (route: Route) => {
     setSelectedRoute(route);
@@ -508,10 +511,13 @@ export default function CoreManagement({ routes, onRouteUpdate }: CoreManagement
           </div>
           <div className="flex items-center space-x-4">
             <button className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <Download className="h-4 w-4" />
+              onClick={() => setShowExportModal(true)}
               <span>Export Config</span>
             </button>
-            <button className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <Upload className="h-4 w-4" />
               <span>Import Config</span>
             </button>
@@ -546,6 +552,27 @@ export default function CoreManagement({ routes, onRouteUpdate }: CoreManagement
       {activeTab === 'diagram' && renderDiagramTab()}
       {activeTab === 'traffic' && renderTrafficTab()}
       {activeTab === 'analysis' && renderAnalysisTab()}
+
+      {/* Export Modal */}
+      <ExportImportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        mode="export"
+        dataType="routes"
+        data={{ routes }}
+      />
+
+      {/* Import Modal */}
+      <ExportImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        mode="import"
+        dataType="routes"
+        data={{ routes }}
+        onImportComplete={(importedRoutes) => {
+          console.log('Imported routes:', importedRoutes);
+        }}
+      />
     </div>
   );
 }

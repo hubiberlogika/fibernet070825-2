@@ -13,7 +13,7 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
     { id: 'core', label: 'Core Management', icon: Network },
     { id: 'assets', label: 'Asset Management', icon: Building2 },
     { id: 'tickets', label: 'Trouble Tickets', icon: Ticket },
-    { id: 'history', label: 'History', icon: History },
+    { id: 'history', label: 'Maintenance', icon: History },
     { id: 'alerts', label: 'Alerts', icon: AlertTriangle },
   ];
 

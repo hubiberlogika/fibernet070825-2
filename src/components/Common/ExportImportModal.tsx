@@ -214,7 +214,7 @@ export default function ExportImportModal({
       case 'maintenance':
         return ['xlsx', 'pdf'];
       case 'all':
-        return ['xlsx'];
+        return ['xlsx', 'pdf'];
       default:
         return ['xlsx'];
     }
@@ -240,10 +240,13 @@ export default function ExportImportModal({
               <p className="text-sm text-gray-600">
                 {mode === 'export' 
                   ? 'Choose format and export your data' 
-                  : 'Upload a file to import data'
+              accept={dataType === 'routes' ? '.xlsx,.csv' : '.xlsx'}
                 }
               </p>
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {dataType === 'routes' ? 'Supported formats: .xlsx, .csv' : 'Supported formats: .xlsx'}
+            </p>
           </div>
           <button
             onClick={onClose}

@@ -582,7 +582,15 @@ export const exportAllData = (
       'End Location': route.location.end,
       'Fiber Count': route.fiberCount,
       'Total Links': route.links.length,
+      'Total Length (km)': route.links.reduce((sum, link) => sum + link.length, 0).toFixed(1),
+      'Average Loss (dB)': route.links.length > 0 
+        ? (route.links.reduce((sum, link) => sum + link.totalLoss, 0) / route.links.length).toFixed(1) 
+        : '0',
       'Trouble Tickets': route.troubleTickets,
+      'Handhole Count': route.assets.handhole,
+      'ODC Count': route.assets.odc,
+      'Pole Count': route.assets.pole,
+      'JC Count': route.assets.jc,
       'Last Maintenance': route.lastMaintenance,
       'Next Maintenance': route.nextMaintenance
     }));
@@ -590,45 +598,127 @@ export const exportAllData = (
     XLSX.utils.book_append_sheet(wb, routesWs, 'Routes');
     
     // Assets sheet
-    const assetsData = assets.map(asset => ({
-      'Asset Number': asset.assetNumber,
-      'Asset Name': asset.name,
-      'Type': asset.type,
-      'Route': routes.find(r => r.id === asset.routeId)?.name || 'Unknown',
-      'Condition': asset.condition,
-      'Status': asset.status,
-      'Location': asset.location.address,
-      'Installation Date': asset.installationDate
-    }));
-    const assetsWs = XLSX.utils.json_to_sheet(assetsData);
-    XLSX.utils.book_append_sheet(wb, assetsWs, 'Assets');
+    if (assets.length > 0) {
+      const assetsData = assets.map(asset => ({
+        'Asset Number': asset.assetNumber,
+        'Asset Name': asset.name,
+        'Type': asset.type,
+        'Route': routes.find(r => r.id === asset.routeId)?.name || 'Unknown',
+        'Condition': asset.condition,
+        'Status': asset.status,
+        'Location': asset.location.address,
+        'Installation Date': asset.installationDate,
+        'Last Inspection': asset.lastInspection || 'N/A',
+        'Next Inspection': asset.nextInspection || 'N/A'
+      }));
+      const assetsWs = XLSX.utils.json_to_sheet(assetsData);
+      XLSX.utils.book_append_sheet(wb, assetsWs, 'Assets');
+    }
     
     // Tickets sheet
-    const ticketsData = tickets.map(ticket => ({
-      'Ticket Number': ticket.ticketNumber,
-      'Route': routes.find(r => r.id === ticket.routeId)?.name || 'Unknown',
-      'Title': ticket.title,
-      'Priority': ticket.priority,
-      'Status': ticket.status,
-      'Category': ticket.category,
-      'Created At': new Date(ticket.createdAt).toLocaleString()
-    }));
-    const ticketsWs = XLSX.utils.json_to_sheet(ticketsData);
-    XLSX.utils.book_append_sheet(wb, ticketsWs, 'Trouble Tickets');
+    if (tickets.length > 0) {
+      const ticketsData = tickets.map(ticket => ({
+        'Ticket Number': ticket.ticketNumber,
+        'Route': routes.find(r => r.id === ticket.routeId)?.name || 'Unknown',
+        'Title': ticket.title,
+        'Priority': ticket.priority,
+        'Status': ticket.status,
+        'Category': ticket.category,
+        'Impact': ticket.impact,
+        'Repair Type': ticket.repairType,
+        'Created At': new Date(ticket.createdAt).toLocaleString(),
+        'Resolved At': ticket.resolvedAt ? new Date(ticket.resolvedAt).toLocaleString() : 'N/A'
+      }));
+      const ticketsWs = XLSX.utils.json_to_sheet(ticketsData);
+      XLSX.utils.book_append_sheet(wb, ticketsWs, 'Trouble Tickets');
+    }
     
     // Maintenance sheet
-    const maintenanceData = maintenance.map(record => ({
-      'Route': routes.find(r => r.id === record.routeId)?.name || 'Unknown',
-      'Type': record.type,
-      'Status': record.status,
-      'Title': record.title,
-      'Priority': record.priority,
-      'Scheduled Date': record.scheduledDate,
-      'Technician': record.technician
-    }));
-    const maintenanceWs = XLSX.utils.json_to_sheet(maintenanceData);
-    XLSX.utils.book_append_sheet(wb, maintenanceWs, 'Maintenance');
+    if (maintenance.length > 0) {
+      const maintenanceData = maintenance.map(record => ({
+        'Route': routes.find(r => r.id === record.routeId)?.name || 'Unknown',
+        'Type': record.type,
+        'Status': record.status,
+        'Title': record.title,
+        'Priority': record.priority,
+        'Scheduled Date': record.scheduledDate,
+        'Completed Date': record.completedDate || 'N/A',
+        'Technician': record.technician,
+        'Duration (hours)': record.duration || 'N/A'
+      }));
+      const maintenanceWs = XLSX.utils.json_to_sheet(maintenanceData);
+      XLSX.utils.book_append_sheet(wb, maintenanceWs, 'Maintenance');
+    }
     
     XLSX.writeFile(wb, `fibernet_complete_export_${timestamp}.xlsx`);
+  } else if (format === 'pdf') {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.text('FiberNet Complete Report', 20, 20);
+    
+    // Add generation date and summary
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30);
+    doc.text(`Routes: ${routes.length} | Tickets: ${tickets.length} | Assets: ${assets.length} | Maintenance: ${maintenance.length}`, 20, 40);
+    
+    let yPos = 60;
+    
+    // Routes summary
+    if (routes.length > 0) {
+      doc.setFontSize(14);
+      doc.text('Routes Summary', 20, yPos);
+      yPos += 15;
+      
+      const routesTableData = routes.slice(0, 10).map(route => [
+        route.name,
+        route.status,
+        route.fiberCount.toString(),
+        route.links.length.toString(),
+        route.troubleTickets.toString()
+      ]);
+
+      doc.autoTable({
+        head: [['Route', 'Status', 'Fibers', 'Links', 'Tickets']],
+        body: routesTableData,
+        startY: yPos,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [59, 130, 246] }
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 20;
+    }
+    
+    // Add new page if needed
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+    
+    // Tickets summary
+    if (tickets.length > 0) {
+      doc.setFontSize(14);
+      doc.text('Recent Trouble Tickets', 20, yPos);
+      yPos += 15;
+      
+      const ticketsTableData = tickets.slice(0, 10).map(ticket => [
+        ticket.ticketNumber,
+        routes.find(r => r.id === ticket.routeId)?.name || 'Unknown',
+        ticket.priority,
+        ticket.status,
+        new Date(ticket.createdAt).toLocaleDateString()
+      ]);
+
+      doc.autoTable({
+        head: [['Ticket #', 'Route', 'Priority', 'Status', 'Created']],
+        body: ticketsTableData,
+        startY: yPos,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [59, 130, 246] }
+      });
+    }
+    
+    doc.save(`fibernet_complete_export_${timestamp}.pdf`);
   }
 };
