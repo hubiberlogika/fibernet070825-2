@@ -33,7 +33,6 @@ export const exportRoutesToXLSX = (routes: Route[], options: ExportOptions = {})
     'Fiber Count': route.fiberCount,
     'Total Links': route.links.length,
     'Total Length (km)': route.links.reduce((sum, link) => sum + link.length, 0).toFixed(1),
-    'Total OTDR Length (km)': route.links.reduce((sum, link) => sum + (link.otdrLength || 0), 0).toFixed(1),
     'Average Loss (dB)': route.links.length > 0 
       ? (route.links.reduce((sum, link) => sum + link.totalLoss, 0) / route.links.length).toFixed(1) 
       : '0',
@@ -46,28 +45,9 @@ export const exportRoutesToXLSX = (routes: Route[], options: ExportOptions = {})
     'Next Maintenance': route.nextMaintenance
   }));
 
-  // Links data sheet
-  const linksData = routes.flatMap(route => 
-    route.links.map(link => ({
-      'Route ID': route.id,
-      'Route Name': route.name,
-      'Link ID': link.id,
-      'Link Name': link.name,
-      'Length (km)': link.length,
-      'OTDR Length (km)': link.otdrLength || 0,
-      'Total Loss (dB)': link.totalLoss,
-      'Status': link.status
-    }))
-  );
   const ws = XLSX.utils.json_to_sheet(exportData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Routes');
-  
-  // Add links sheet
-  if (linksData.length > 0) {
-    const linksWs = XLSX.utils.json_to_sheet(linksData);
-    XLSX.utils.book_append_sheet(wb, linksWs, 'Links');
-  }
   
   // Auto-size columns
   const colWidths = Object.keys(exportData[0] || {}).map(key => ({
@@ -91,7 +71,6 @@ export const exportRoutesToCSV = (routes: Route[], options: ExportOptions = {}) 
     'Fiber Count': route.fiberCount,
     'Total Links': route.links.length,
     'Total Length (km)': route.links.reduce((sum, link) => sum + link.length, 0).toFixed(1),
-    'Total OTDR Length (km)': route.links.reduce((sum, link) => sum + (link.otdrLength || 0), 0).toFixed(1),
     'Average Loss (dB)': route.links.length > 0 
       ? (route.links.reduce((sum, link) => sum + link.totalLoss, 0) / route.links.length).toFixed(1) 
       : '0',
@@ -132,7 +111,6 @@ export const exportRoutesToPDF = (routes: Route[], options: ExportOptions = {}) 
     route.fiberCount.toString(),
     route.links.length.toString(),
     route.links.reduce((sum, link) => sum + link.length, 0).toFixed(1),
-    route.links.reduce((sum, link) => sum + (link.otdrLength || 0), 0).toFixed(1),
     route.links.length > 0 
       ? (route.links.reduce((sum, link) => sum + link.totalLoss, 0) / route.links.length).toFixed(1) 
       : '0',
@@ -140,7 +118,7 @@ export const exportRoutesToPDF = (routes: Route[], options: ExportOptions = {}) 
   ]);
 
   doc.autoTable({
-    head: [['Route', 'Status', 'Location', 'Fibers', 'Links', 'Length (km)', 'OTDR (km)', 'Avg Loss (dB)', 'Tickets']],
+    head: [['Route', 'Status', 'Location', 'Fibers', 'Links', 'Length (km)', 'Avg Loss (dB)', 'Tickets']],
     body: tableData,
     startY: 40,
     styles: { fontSize: 8 },
@@ -351,6 +329,67 @@ export const exportAssetsToXLSX = (assets: NetworkAsset[], routes: Route[], opti
   XLSX.writeFile(wb, `${filename}${timestamp}.xlsx`);
 };
 
+// Assets PDF Export
+export const exportAssetsToPDF = (assets: NetworkAsset[], routes: Route[], options: ExportOptions = {}) => {
+  const filename = options.filename || 'network_assets_export';
+  const title = options.title || 'Network Assets Report';
+  const timestamp = options.includeTimestamp ? `_${new Date().toISOString().split('T')[0]}` : '';
+  
+  const getRouteName = (routeId: string) => {
+    const route = routes.find(r => r.id === routeId);
+    return route ? route.name : 'Unknown Route';
+  };
+
+  const doc = new jsPDF();
+  
+  // Add title
+  doc.setFontSize(20);
+  doc.text(title, 20, 20);
+  
+  // Add generation date and summary
+  doc.setFontSize(10);
+  doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30);
+  doc.text(`Total Assets: ${assets.length}`, 20, 40);
+  
+  // Summary by type
+  const typeCounts = assets.reduce((acc, asset) => {
+    acc[asset.type] = (acc[asset.type] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  let yPos = 50;
+  doc.text('Asset Type Summary:', 20, yPos);
+  yPos += 10;
+  Object.entries(typeCounts).forEach(([type, count]) => {
+    doc.text(`${type}: ${count}`, 30, yPos);
+    yPos += 8;
+  });
+  
+  yPos += 10;
+  
+  // Assets table
+  const tableData = assets.map(asset => [
+    asset.assetNumber,
+    asset.name.substring(0, 20) + (asset.name.length > 20 ? '...' : ''),
+    asset.type,
+    getRouteName(asset.routeId),
+    asset.condition,
+    asset.status,
+    new Date(asset.installationDate).toLocaleDateString()
+  ]);
+
+  doc.autoTable({
+    head: [['Asset #', 'Name', 'Type', 'Route', 'Condition', 'Status', 'Installed']],
+    body: tableData,
+    startY: yPos,
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [59, 130, 246] },
+    alternateRowStyles: { fillColor: [245, 245, 245] }
+  });
+  
+  doc.save(`${filename}${timestamp}.pdf`);
+};
+
 // Import Functions
 export const importRoutesFromXLSX = (file: File): Promise<Partial<Route>[]> => {
   return new Promise((resolve, reject) => {
@@ -458,6 +497,67 @@ export const exportMaintenanceToXLSX = (records: MaintenanceRecord[], routes: Ro
   XLSX.utils.book_append_sheet(wb, ws, 'Maintenance Records');
   
   XLSX.writeFile(wb, `${filename}${timestamp}.xlsx`);
+};
+
+// Maintenance PDF Export
+export const exportMaintenanceToPDF = (records: MaintenanceRecord[], routes: Route[], options: ExportOptions = {}) => {
+  const filename = options.filename || 'maintenance_records_export';
+  const title = options.title || 'Maintenance Records Report';
+  const timestamp = options.includeTimestamp ? `_${new Date().toISOString().split('T')[0]}` : '';
+  
+  const getRouteName = (routeId: string) => {
+    const route = routes.find(r => r.id === routeId);
+    return route ? route.name : 'Unknown Route';
+  };
+
+  const doc = new jsPDF();
+  
+  // Add title
+  doc.setFontSize(20);
+  doc.text(title, 20, 20);
+  
+  // Add generation date and summary
+  doc.setFontSize(10);
+  doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30);
+  doc.text(`Total Records: ${records.length}`, 20, 40);
+  
+  // Summary by status
+  const statusCounts = records.reduce((acc, record) => {
+    acc[record.status] = (acc[record.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  let yPos = 50;
+  doc.text('Status Summary:', 20, yPos);
+  yPos += 10;
+  Object.entries(statusCounts).forEach(([status, count]) => {
+    doc.text(`${status}: ${count}`, 30, yPos);
+    yPos += 8;
+  });
+  
+  yPos += 10;
+  
+  // Records table
+  const tableData = records.map(record => [
+    getRouteName(record.routeId),
+    record.title.substring(0, 25) + (record.title.length > 25 ? '...' : ''),
+    record.type,
+    record.status,
+    record.priority,
+    record.technician,
+    record.scheduledDate
+  ]);
+
+  doc.autoTable({
+    head: [['Route', 'Title', 'Type', 'Status', 'Priority', 'Technician', 'Scheduled']],
+    body: tableData,
+    startY: yPos,
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [59, 130, 246] },
+    alternateRowStyles: { fillColor: [245, 245, 245] }
+  });
+  
+  doc.save(`${filename}${timestamp}.pdf`);
 };
 
 // Bulk export function
