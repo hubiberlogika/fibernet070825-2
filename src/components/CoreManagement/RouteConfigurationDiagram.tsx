@@ -308,7 +308,6 @@ export default function RouteConfigurationDiagram({
     const isSelected = selectedNode === route.id || selectedRoute.id === route.id;
     const statusColor = getStatusColor(getRouteStatus(route.id));
     const nodeSize = 60; // Rectangle size
-    const position = getRoutePosition(route.id);
     const routePosition = routePositions.find(pos => pos.id === route.id);
     
     return (
