@@ -4,9 +4,10 @@ import {
   MapPin, Calendar, Zap, Signal, AlertCircle, Settings, 
   Edit3, Save, X, Plus, Trash2, Activity, Clock, 
   CheckCircle, AlertTriangle, TrendingUp, TrendingDown,
-  Wrench, TestTube, Eye, EyeOff, Filter, Building2,
+  Wrench, TestTube, Eye, EyeOff, Filter, Building2, Download,
   Boxes, Zap as Pole, Link as JCIcon, ArrowLeft
 } from 'lucide-react';
+import ExportImportModal from '../Common/ExportImportModal';
 
 interface RouteDetailsProps {
   route: Route;
@@ -29,6 +30,7 @@ export default function RouteDetails({
   const [linkFilter, setLinkFilter] = useState<'all' | 'operational' | 'warning' | 'critical' | 'maintenance'>('all');
   const [newLink, setNewLink] = useState<Partial<Link> | null>(null);
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const handleSave = () => {
     onRouteUpdate(editedRoute);
@@ -219,6 +221,13 @@ export default function RouteDetails({
                 </button>
               </div>
             )}
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="flex items-center space-x-1 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              <span>Export</span>
+            </button>
           </div>
         </div>
 
@@ -583,6 +592,20 @@ export default function RouteDetails({
                 </div>
 
                 <div>
+                  <label className="block text-xs text-blue-700 mb-1">OTDR Length (km) *</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={newLink.otdrLength || ''}
+                    onChange={(e) => setNewLink({ ...newLink, otdrLength: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.0"
+                    required
+                  />
+                </div>
+
+                <div>
                   <label className="block text-xs text-blue-700 mb-1">Total Loss (dB) *</label>
                   <input
                     type="number"
@@ -641,7 +664,7 @@ export default function RouteDetails({
           {/* Existing Links */}
           {filteredLinks.map((link) => (
             <div key={link.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
+              <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Link Name</label>
                   {editingLinkId === link.id ? (
@@ -668,6 +691,21 @@ export default function RouteDetails({
                     />
                   ) : (
                     <p className="font-medium text-gray-900">{link.length}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">OTDR Length (km)</label>
+                  {editingLinkId === link.id ? (
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={link.otdrLength || 0}
+                      onChange={(e) => updateLink(link.id, { otdrLength: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  ) : (
+                    <p className="font-medium text-gray-900">{link.otdrLength || 0}</p>
                   )}
                 </div>
 
@@ -937,6 +975,15 @@ export default function RouteDetails({
       {activeTab === 'maintenance' && renderMaintenance()}
       {activeTab === 'tickets' && renderTickets()}
       {activeTab === 'analytics' && renderAnalytics()}
+
+      {/* Export Modal */}
+      <ExportImportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        mode="export"
+        dataType="routes"
+        data={{ routes: [editedRoute] }}
+      />
     </div>
   );
 }

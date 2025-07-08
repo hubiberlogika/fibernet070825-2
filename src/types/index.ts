@@ -2,6 +2,7 @@ export interface Link {
   id: string;
   name: string;
   length: number; // in km
+  otdrLength?: number; // OTDR measured length in km
   totalLoss: number; // in dB
   status: 'operational' | 'warning' | 'critical' | 'maintenance';
 }

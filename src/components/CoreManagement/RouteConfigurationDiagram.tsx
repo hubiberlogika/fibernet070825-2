@@ -36,6 +36,7 @@ interface RoutePosition {
   x: number;
   y: number;
   name: string;
+  displayName?: string; // Editable display name
 }
 
 interface Connection {
@@ -44,7 +45,9 @@ interface Connection {
   targetId: string;
   trafficCount: number;
   status: 'active' | 'warning' | 'error';
-  bandwidth: string;
+  totalLoss: number;
+  length: number;
+  routeName: string;
 }
 
 export default function RouteConfigurationDiagram({
@@ -60,20 +63,28 @@ export default function RouteConfigurationDiagram({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [editingNodeName, setEditingNodeName] = useState('');
 
   // Initial route positions in a circular layout
   const [routePositions, setRoutePositions] = useState<RoutePosition[]>(() => {
     const centerX = 400;
     const centerY = 300;
-    const radius = 200;
+    const radius = 150;
     
     return routes.map((route, index) => {
-      const angle = (index / routes.length) * 2 * Math.PI;
+      const cols = Math.ceil(Math.sqrt(routes.length));
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+      const offsetX = (col - (cols - 1) / 2) * 120;
+      const offsetY = (row - Math.floor((routes.length - 1) / cols) / 2) * 100;
+      
       return {
         id: route.id,
-        x: centerX + radius * Math.cos(angle),
-        y: centerY + radius * Math.sin(angle),
-        name: route.name
+        x: centerX + offsetX,
+        y: centerY + offsetY,
+        name: route.name,
+        displayName: route.name
       };
     });
   });
@@ -102,10 +113,8 @@ export default function RouteConfigurationDiagram({
           if (connectionMap.has(existingKey)) {
             const existing = connectionMap.get(existingKey)!;
             existing.trafficCount += 1;
-            
-            // Update total loss (sum up)
-            const existingLoss = parseFloat(existing.bandwidth.replace(/[^\d.]/g, ''));
-            existing.bandwidth = `${(existingLoss + traffic.totalLoss).toFixed(1)} dB`;
+            existing.totalLoss += traffic.totalLoss;
+            existing.length += traffic.length;
             
             // Update status (worst case)
             if (traffic.status === 'error' || existing.status === 'error') {
@@ -114,6 +123,9 @@ export default function RouteConfigurationDiagram({
               existing.status = 'warning';
             }
           } else {
+            // Find route link for additional data
+            const routeLink = sourceRoute.links.find(l => l.name.includes(traffic.selectedRoute)) || sourceRoute.links[0];
+            
             connectionMap.set(existingKey, {
               id: existingKey,
               sourceId: sourceRoute.id,
@@ -121,7 +133,9 @@ export default function RouteConfigurationDiagram({
               trafficCount: 1,
               status: traffic.status === 'active' ? 'active' : 
                      traffic.status === 'error' ? 'error' : 'warning',
-              bandwidth: `${traffic.totalLoss.toFixed(1)} dB`
+              totalLoss: traffic.totalLoss,
+              length: traffic.length,
+              routeName: `${sourceRoute.name} → ${targetRoute.name}`
             });
           }
         }
@@ -163,12 +177,42 @@ export default function RouteConfigurationDiagram({
     setRoutePositions(prev => 
       prev.map(pos => 
         pos.id === routeId 
-          ? { ...pos, x: newX, y: newY }
+          ? { ...pos, x: Math.max(50, Math.min(750, newX)), y: Math.max(50, Math.min(550, newY)) }
           : pos
       )
     );
   };
 
+  const handleNodeNameEdit = (routeId: string, newName: string) => {
+    setRoutePositions(prev => 
+      prev.map(pos => 
+        pos.id === routeId 
+          ? { ...pos, displayName: newName }
+          : pos
+      )
+    );
+  };
+
+  const startEditingNodeName = (routeId: string) => {
+    const position = routePositions.find(pos => pos.id === routeId);
+    if (position) {
+      setEditingNodeId(routeId);
+      setEditingNodeName(position.displayName || position.name);
+    }
+  };
+
+  const saveNodeName = () => {
+    if (editingNodeId) {
+      handleNodeNameEdit(editingNodeId, editingNodeName);
+      setEditingNodeId(null);
+      setEditingNodeName('');
+    }
+  };
+
+  const cancelEditingNodeName = () => {
+    setEditingNodeId(null);
+    setEditingNodeName('');
+  };
   const handleZoomIn = () => {
     setZoom(prev => Math.min(prev * 1.2, 3));
   };
@@ -222,16 +266,26 @@ export default function RouteConfigurationDiagram({
           transform={`rotate(${Math.atan2(dy, dx) * 180 / Math.PI}, ${arrowX}, ${arrowY})`}
         />
         
-        {/* Connection label */}
+        {/* Connection labels */}
         <text
           x={(sourcePos.x + targetPos.x) / 2}
-          y={(sourcePos.y + targetPos.y) / 2 - 10}
+          y={(sourcePos.y + targetPos.y) / 2 - 20}
           textAnchor="middle"
-          fontSize="10"
+          fontSize="9"
           fill="#374151"
           className="pointer-events-none"
         >
-          Loss: {connection.bandwidth}
+          {connection.routeName}
+        </text>
+        <text
+          x={(sourcePos.x + targetPos.x) / 2}
+          y={(sourcePos.y + targetPos.y) / 2 - 8}
+          textAnchor="middle"
+          fontSize="8"
+          fill="#6B7280"
+          className="pointer-events-none"
+        >
+          Loss: {connection.totalLoss.toFixed(1)}dB | {connection.length.toFixed(1)}km
         </text>
         <text
           x={(sourcePos.x + targetPos.x) / 2}
@@ -241,7 +295,7 @@ export default function RouteConfigurationDiagram({
           fill="#6B7280"
           className="pointer-events-none"
         >
-          {connection.trafficCount} flows
+          {connection.trafficCount} traffic flows
         </text>
       </g>
     );
@@ -253,20 +307,25 @@ export default function RouteConfigurationDiagram({
 
     const isSelected = selectedNode === route.id || selectedRoute.id === route.id;
     const statusColor = getStatusColor(getRouteStatus(route.id));
-    const nodeRadius = 30;
+    const nodeSize = 60; // Rectangle size
+    const position = getRoutePosition(route.id);
+    const routePosition = routePositions.find(pos => pos.id === route.id);
     
     return (
       <g key={route.id}>
-        {/* Node circle */}
-        <circle
-          cx={position.x}
-          cy={position.y}
-          r={nodeRadius}
+        {/* Node rectangle */}
+        <rect
+          x={position.x - nodeSize/2}
+          y={position.y - nodeSize/2}
+          width={nodeSize}
+          height={nodeSize}
           fill={statusColor}
           stroke={isSelected ? '#1D4ED8' : '#FFFFFF'}
           strokeWidth={isSelected ? 3 : 2}
+          rx="8"
           className={`cursor-pointer transition-all ${isEditing ? 'cursor-move' : ''}`}
           onClick={() => setSelectedNode(route.id)}
+          onDoubleClick={() => isEditing && startEditingNodeName(route.id)}
           onMouseDown={(e) => {
             if (isEditing) {
               setIsDragging(true);
@@ -285,23 +344,44 @@ export default function RouteConfigurationDiagram({
           color="white"
         />
         
-        {/* Node label */}
-        <text
-          x={position.x}
-          y={position.y + nodeRadius + 15}
-          textAnchor="middle"
-          fontSize="12"
-          fontWeight="600"
-          fill="#374151"
-          className="pointer-events-none"
-        >
-          {route.name}
-        </text>
+        {/* Node label - editable */}
+        {editingNodeId === route.id ? (
+          <foreignObject
+            x={position.x - 40}
+            y={position.y + nodeSize/2 + 5}
+            width="80"
+            height="25"
+          >
+            <div className="flex items-center space-x-1">
+              <input
+                type="text"
+                value={editingNodeName}
+                onChange={(e) => setEditingNodeName(e.target.value)}
+                className="w-16 px-1 py-0.5 text-xs border border-blue-300 rounded focus:ring-1 focus:ring-blue-500"
+                onKeyPress={(e) => e.key === 'Enter' && saveNodeName()}
+                onBlur={saveNodeName}
+                autoFocus
+              />
+            </div>
+          </foreignObject>
+        ) : (
+          <text
+            x={position.x}
+            y={position.y + nodeSize/2 + 15}
+            textAnchor="middle"
+            fontSize="11"
+            fontWeight="600"
+            fill="#374151"
+            className="pointer-events-none"
+          >
+            {routePosition?.displayName || route.name}
+          </text>
+        )}
         
         {/* Status indicator */}
         <text
           x={position.x}
-          y={position.y + nodeRadius + 30}
+          y={position.y + nodeSize/2 + 30}
           textAnchor="middle"
           fontSize="10"
           fill="#6B7280"
@@ -472,7 +552,7 @@ export default function RouteConfigurationDiagram({
             <span className="text-sm text-blue-800 font-medium">Edit Mode Active</span>
           </div>
           <p className="text-sm text-blue-700 mt-1">
-            Click and drag route nodes to reposition them. Click on a node to select it and view details.
+            Click and drag route nodes to reposition them. Double-click a node to edit its name. Click on a node to select it and view details.
           </p>
         </div>
       )}
