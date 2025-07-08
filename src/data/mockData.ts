@@ -24,6 +24,7 @@ export const routes: Route[] = [
         id: 'link-a1',
         name: 'FO-LINK-CHA-01',
         length: 12.5,
+        otdrLength: 12.7,
         totalLoss: 2.3,
         status: 'operational'
       },
@@ -31,6 +32,7 @@ export const routes: Route[] = [
         id: 'link-a2',
         name: 'FO-LINK-CHA-02',
         length: 13.0,
+        otdrLength: 13.2,
         totalLoss: 2.1,
         status: 'operational'
       }
@@ -59,6 +61,7 @@ export const routes: Route[] = [
         id: 'link-b1',
         name: 'FO-LINK-CHB-01',
         length: 16.1,
+        otdrLength: 16.3,
         totalLoss: 3.8,
         status: 'warning'
       },
@@ -66,6 +69,7 @@ export const routes: Route[] = [
         id: 'link-b2',
         name: 'FO-LINK-CHB-02',
         length: 16.0,
+        otdrLength: 16.1,
         totalLoss: 3.2,
         status: 'operational'
       }
@@ -94,6 +98,7 @@ export const routes: Route[] = [
         id: 'link-c1',
         name: 'FO-LINK-CHC-01',
         length: 9.2,
+        otdrLength: 9.4,
         totalLoss: 4.2,
         status: 'maintenance'
       },
@@ -101,6 +106,7 @@ export const routes: Route[] = [
         id: 'link-c2',
         name: 'FO-LINK-CHC-02',
         length: 9.5,
+        otdrLength: 9.6,
         totalLoss: 3.9,
         status: 'operational'
       }
@@ -129,6 +135,7 @@ export const routes: Route[] = [
         id: 'link-d1',
         name: 'FO-LINK-CHD-01',
         length: 13.8,
+        otdrLength: 14.0,
         totalLoss: 1.9,
         status: 'operational'
       },
@@ -136,6 +143,7 @@ export const routes: Route[] = [
         id: 'link-d2',
         name: 'FO-LINK-CHD-02',
         length: 14.2,
+        otdrLength: 14.4,
         totalLoss: 2.0,
         status: 'operational'
       },
@@ -143,6 +151,7 @@ export const routes: Route[] = [
         id: 'link-d3',
         name: 'FO-LINK-CHD-03',
         length: 13.3,
+        otdrLength: 13.5,
         totalLoss: 1.8,
         status: 'operational'
       }
@@ -171,6 +180,7 @@ export const routes: Route[] = [
         id: 'link-e1',
         name: 'FO-LINK-CHE-01',
         length: 14.5,
+        otdrLength: 14.8,
         totalLoss: 6.7,
         status: 'critical'
       },
@@ -178,6 +188,7 @@ export const routes: Route[] = [
         id: 'link-e2',
         name: 'FO-LINK-CHE-02',
         length: 14.4,
+        otdrLength: 14.6,
         totalLoss: 5.2,
         status: 'warning'
       }
@@ -206,6 +217,7 @@ export const routes: Route[] = [
         id: 'link-f1',
         name: 'FO-LINK-CHF-01',
         length: 17.6,
+        otdrLength: 17.8,
         totalLoss: 2.8,
         status: 'operational'
       },
@@ -213,6 +225,7 @@ export const routes: Route[] = [
         id: 'link-f2',
         name: 'FO-LINK-CHF-02',
         length: 17.6,
+        otdrLength: 17.9,
         totalLoss: 3.1,
         status: 'operational'
       }

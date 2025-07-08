@@ -13,7 +13,9 @@ import {
   exportMaintenanceToXLSX,
   exportAllData,
   importRoutesFromXLSX,
-  importRoutesFromCSV
+  importRoutesFromCSV,
+  exportAssetsToPDF,
+  exportMaintenanceToPDF
 } from '../../utils/exportUtils';
 import { Route, TroubleTicket, NetworkAsset, MaintenanceRecord } from '../../types';
 
@@ -104,8 +106,10 @@ export default function ExportImportModal({
           if (!data.assets || !data.routes) throw new Error('No assets data available');
           if (selectedFormat === 'xlsx') {
             exportAssetsToXLSX(data.assets, data.routes, options);
+          } else if (selectedFormat === 'pdf') {
+            exportAssetsToPDF(data.assets, data.routes, options);
           } else {
-            throw new Error('Only XLSX export available for assets');
+            throw new Error('CSV export not available for assets');
           }
           break;
 
@@ -113,8 +117,10 @@ export default function ExportImportModal({
           if (!data.maintenance || !data.routes) throw new Error('No maintenance data available');
           if (selectedFormat === 'xlsx') {
             exportMaintenanceToXLSX(data.maintenance, data.routes, options);
+          } else if (selectedFormat === 'pdf') {
+            exportMaintenanceToPDF(data.maintenance, data.routes, options);
           } else {
-            throw new Error('Only XLSX export available for maintenance records');
+            throw new Error('CSV export not available for maintenance records');
           }
           break;
 
@@ -204,8 +210,9 @@ export default function ExportImportModal({
       case 'tickets':
         return ['xlsx', 'pdf'];
       case 'assets':
+        return ['xlsx', 'pdf'];
       case 'maintenance':
-        return ['xlsx'];
+        return ['xlsx', 'pdf'];
       case 'all':
         return ['xlsx'];
       default:

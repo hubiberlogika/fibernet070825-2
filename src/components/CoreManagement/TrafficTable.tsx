@@ -732,13 +732,13 @@ export default function TrafficTable({
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Loss</label>
-                  <p className="text-lg text-gray-900">{selectedTraffic.totalLoss.toFixed(1)} dB</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Loss per km</label>
+                  <p className="text-lg text-gray-900">{selectedTraffic.lossPerKm.toFixed(2)} dB/km</p>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Loss per km</label>
-                  <p className="text-lg text-gray-900">{selectedTraffic.lossPerKm.toFixed(2)} dB/km</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Loss</label>
+                  <p className="text-lg text-gray-900">{selectedTraffic.totalLoss.toFixed(1)} dB</p>
                 </div>
                 
                 <div>

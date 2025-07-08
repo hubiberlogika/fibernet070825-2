@@ -31,6 +31,7 @@ export default function TroubleTicketManagement({
   const [newMaterial, setNewMaterial] = useState<{ [ticketId: string]: Partial<MaterialUsage> }>({});
   const [editingMaterialData, setEditingMaterialData] = useState<MaterialUsage | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -294,6 +295,13 @@ export default function TroubleTicketManagement({
             >
               <Download className="h-4 w-4" />
               <span>Export</span>
+            </button>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Upload className="h-4 w-4" />
+              <span>Import</span>
             </button>
             <div className="text-right">
               <p className="text-sm text-gray-500">Total Tickets</p>
@@ -887,6 +895,18 @@ export default function TroubleTicketManagement({
         mode="export"
         dataType="tickets"
         data={{ tickets, routes }}
+      />
+
+      {/* Import Modal */}
+      <ExportImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        mode="import"
+        dataType="tickets"
+        data={{ tickets, routes }}
+        onImportComplete={(importedTickets) => {
+          console.log('Imported tickets:', importedTickets);
+        }}
       />
 
       {/* Print Styles */}

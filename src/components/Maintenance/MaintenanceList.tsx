@@ -1,13 +1,15 @@
 import React from 'react';
 import { MaintenanceRecord } from '../../types';
-import { Calendar, User, Clock, CheckCircle, PlayCircle, XCircle } from 'lucide-react';
+import { Calendar, User, Clock, CheckCircle, PlayCircle, XCircle, Download, Upload } from 'lucide-react';
 
 interface MaintenanceListProps {
   maintenanceRecords: MaintenanceRecord[];
   routes: Array<{ id: string; name: string }>;
+  onExport?: () => void;
+  onImport?: () => void;
 }
 
-export default function MaintenanceList({ maintenanceRecords, routes }: MaintenanceListProps) {
+export default function MaintenanceList({ maintenanceRecords, routes, onExport, onImport }: MaintenanceListProps) {
   const getStatusIcon = (status: MaintenanceRecord['status']) => {
     switch (status) {
       case 'scheduled':
@@ -61,8 +63,32 @@ export default function MaintenanceList({ maintenanceRecords, routes }: Maintena
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Maintenance Schedule</h3>
-        <p className="text-sm text-gray-600 mt-1">Manage all scheduled and ongoing maintenance tasks</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Maintenance Schedule</h3>
+            <p className="text-sm text-gray-600 mt-1">Manage all scheduled and ongoing maintenance tasks</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            {onExport && (
+              <button
+                onClick={onExport}
+                className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export</span>
+              </button>
+            )}
+            {onImport && (
+              <button
+                onClick={onImport}
+                className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Upload className="h-4 w-4" />
+                <span>Import</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="divide-y divide-gray-200">

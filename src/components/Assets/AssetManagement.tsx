@@ -35,6 +35,7 @@ export default function AssetManagement({
   const [routeFilter, setRouteFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const getAssetIcon = (type: string) => {
     switch (type) {
@@ -165,7 +166,10 @@ export default function AssetManagement({
               <Download className="h-4 w-4" />
               <span>Export</span>
             </button>
-            <button className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <Upload className="h-4 w-4" />
               <span>Import</span>
             </button>
@@ -445,6 +449,18 @@ export default function AssetManagement({
         mode="export"
         dataType="assets"
         data={{ assets, routes }}
+      />
+
+      {/* Import Modal */}
+      <ExportImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        mode="import"
+        dataType="assets"
+        data={{ assets, routes }}
+        onImportComplete={(importedAssets) => {
+          console.log('Imported assets:', importedAssets);
+        }}
       />
     </div>
   );

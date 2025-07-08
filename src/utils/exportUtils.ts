@@ -33,6 +33,7 @@ export const exportRoutesToXLSX = (routes: Route[], options: ExportOptions = {})
     'Fiber Count': route.fiberCount,
     'Total Links': route.links.length,
     'Total Length (km)': route.links.reduce((sum, link) => sum + link.length, 0).toFixed(1),
+    'Total OTDR Length (km)': route.links.reduce((sum, link) => sum + (link.otdrLength || 0), 0).toFixed(1),
     'Average Loss (dB)': route.links.length > 0 
       ? (route.links.reduce((sum, link) => sum + link.totalLoss, 0) / route.links.length).toFixed(1) 
       : '0',
@@ -45,9 +46,28 @@ export const exportRoutesToXLSX = (routes: Route[], options: ExportOptions = {})
     'Next Maintenance': route.nextMaintenance
   }));
 
+  // Links data sheet
+  const linksData = routes.flatMap(route => 
+    route.links.map(link => ({
+      'Route ID': route.id,
+      'Route Name': route.name,
+      'Link ID': link.id,
+      'Link Name': link.name,
+      'Length (km)': link.length,
+      'OTDR Length (km)': link.otdrLength || 0,
+      'Total Loss (dB)': link.totalLoss,
+      'Status': link.status
+    }))
+  );
   const ws = XLSX.utils.json_to_sheet(exportData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Routes');
+  
+  // Add links sheet
+  if (linksData.length > 0) {
+    const linksWs = XLSX.utils.json_to_sheet(linksData);
+    XLSX.utils.book_append_sheet(wb, linksWs, 'Links');
+  }
   
   // Auto-size columns
   const colWidths = Object.keys(exportData[0] || {}).map(key => ({
@@ -71,6 +91,7 @@ export const exportRoutesToCSV = (routes: Route[], options: ExportOptions = {}) 
     'Fiber Count': route.fiberCount,
     'Total Links': route.links.length,
     'Total Length (km)': route.links.reduce((sum, link) => sum + link.length, 0).toFixed(1),
+    'Total OTDR Length (km)': route.links.reduce((sum, link) => sum + (link.otdrLength || 0), 0).toFixed(1),
     'Average Loss (dB)': route.links.length > 0 
       ? (route.links.reduce((sum, link) => sum + link.totalLoss, 0) / route.links.length).toFixed(1) 
       : '0',
@@ -111,6 +132,7 @@ export const exportRoutesToPDF = (routes: Route[], options: ExportOptions = {}) 
     route.fiberCount.toString(),
     route.links.length.toString(),
     route.links.reduce((sum, link) => sum + link.length, 0).toFixed(1),
+    route.links.reduce((sum, link) => sum + (link.otdrLength || 0), 0).toFixed(1),
     route.links.length > 0 
       ? (route.links.reduce((sum, link) => sum + link.totalLoss, 0) / route.links.length).toFixed(1) 
       : '0',
@@ -118,7 +140,7 @@ export const exportRoutesToPDF = (routes: Route[], options: ExportOptions = {}) 
   ]);
 
   doc.autoTable({
-    head: [['Route', 'Status', 'Location', 'Fibers', 'Links', 'Length (km)', 'Avg Loss (dB)', 'Tickets']],
+    head: [['Route', 'Status', 'Location', 'Fibers', 'Links', 'Length (km)', 'OTDR (km)', 'Avg Loss (dB)', 'Tickets']],
     body: tableData,
     startY: 40,
     styles: { fontSize: 8 },
