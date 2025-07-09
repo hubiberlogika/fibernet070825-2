@@ -510,8 +510,11 @@ export default function CoreManagement({ routes, onRouteUpdate }: CoreManagement
             <p className="text-gray-600">Manage network core configurations, traffic routing, and performance monitoring</p>
           </div>
           <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button
               onClick={() => setShowExportModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Download className="h-4 w-4" />
               <span>Export Config</span>
             </button>
             <button

@@ -1,9 +1,16 @@
 import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import { Route, TroubleTicket, NetworkAsset, MaintenanceRecord } from '../types';
+
+// Extend jsPDF type to include autoTable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 
 export interface ExportOptions {
   filename?: string;
@@ -110,7 +117,7 @@ export const exportRoutesToPDF = (routes: Route[], options: ExportOptions = {}) 
     route.troubleTickets.toString()
   ]);
 
-  (doc as any).autoTable({
+  doc.autoTable({
     head: [['Route', 'Status', 'Location', 'Fibers', 'Links', 'Length (km)', 'Avg Loss (dB)', 'Tickets']],
     body: tableData,
     startY: 40,
@@ -255,7 +262,7 @@ export const exportTroubleTicketsToPDF = (tickets: TroubleTicket[], routes: Rout
     new Date(ticket.createdAt).toLocaleDateString()
   ]);
 
-  (doc as any).autoTable({
+  doc.autoTable({
     head: [['Ticket #', 'Route', 'Title', 'Priority', 'Status', 'Impact', 'Created']],
     body: tableData,
     startY: yPos,
@@ -371,7 +378,7 @@ export const exportAssetsToPDF = (assets: NetworkAsset[], routes: Route[], optio
     new Date(asset.installationDate).toLocaleDateString()
   ]);
 
-  (doc as any).autoTable({
+  doc.autoTable({
     head: [['Asset #', 'Name', 'Type', 'Route', 'Condition', 'Status', 'Installed']],
     body: tableData,
     startY: yPos,
@@ -541,7 +548,7 @@ export const exportMaintenanceToPDF = (records: MaintenanceRecord[], routes: Rou
     record.scheduledDate
   ]);
 
-  (doc as any).autoTable({
+  doc.autoTable({
     head: [['Route', 'Title', 'Type', 'Status', 'Priority', 'Technician', 'Scheduled']],
     body: tableData,
     startY: yPos,
@@ -672,7 +679,7 @@ export const exportAllData = (
         route.troubleTickets.toString()
       ]);
 
-      (doc as any).autoTable({
+      doc.autoTable({
         head: [['Route', 'Status', 'Fibers', 'Links', 'Tickets']],
         body: routesTableData,
         startY: yPos,
@@ -680,7 +687,7 @@ export const exportAllData = (
         headStyles: { fillColor: [59, 130, 246] }
       });
       
-      yPos = (doc as any).lastAutoTable.finalY + 20;
+      yPos = (doc as any).autoTable.previous.finalY + 20;
     }
     
     // Add new page if needed
@@ -703,7 +710,7 @@ export const exportAllData = (
         new Date(ticket.createdAt).toLocaleDateString()
       ]);
 
-      (doc as any).autoTable({
+      doc.autoTable({
         head: [['Ticket #', 'Route', 'Priority', 'Status', 'Created']],
         body: ticketsTableData,
         startY: yPos,
