@@ -1,12 +1,12 @@
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import { Route, TroubleTicket, NetworkAsset, MaintenanceRecord } from '../types';
 
 // Apply autoTable plugin to jsPDF
-autoTable(jsPDF.API);
+autoTable(jsPDF);
 
 export interface ExportOptions {
   filename?: string;
