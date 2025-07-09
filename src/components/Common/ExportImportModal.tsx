@@ -240,21 +240,15 @@ export default function ExportImportModal({
               <p className="text-sm text-gray-600">
                 {mode === 'export' 
                   ? 'Choose format and export your data' 
-              accept={dataType === 'routes' ? '.xlsx,.csv' : '.xlsx'}
+                  : 'Select a file to import your data'
                 }
               </p>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {dataType === 'routes' ? 'Supported formats: .xlsx, .csv' : 'Supported formats: .xlsx'}
-            </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {dataType === 'routes' ? 'Supported formats: .xlsx, .csv' : 'Supported formats: .xlsx'}
+              </p>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
 
         <div className="p-6 space-y-6">
           {mode === 'export' ? (
