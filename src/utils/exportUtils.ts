@@ -5,9 +5,6 @@ import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import { Route, TroubleTicket, NetworkAsset, MaintenanceRecord } from '../types';
 
-// Apply autoTable plugin to jsPDF
-autoTable(jsPDF);
-
 export interface ExportOptions {
   filename?: string;
   title?: string;
